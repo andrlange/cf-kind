@@ -78,6 +78,56 @@ make down        # tear everything down (image caches remain)
 
 The cf CLI uses its own `CF_HOME` (`~/.config/cf-kind-demo/cf`); `~/.cf` of other foundations remains untouched.
 
+## Make targets
+
+Run `make` without arguments for the built-in help. The upstream `kind-deployment` Makefile only provides
+`init`, `install`, `login`, `create-kind`, `delete-kind`, `create-org`, `bootstrap`, `bootstrap-complete`, `up`, `down`, `smoke` and `cats`.
+
+### Added by cf-kind-demo
+
+| Area | Target | Description |
+|---|---|---|
+| Prerequisites | `prereqs` | Check this Mac (arch, Docker Desktop, Rosetta, ports, cf CLI, git hooks) and install missing tools via Homebrew |
+| | `prereqs-check` | Same checks without installing anything (automatic when `AIRGAP=true`) |
+| Configuration | `configure` | Pre-task: set domain, TLS mode, provider etc. (`KEY=VALUE …` or interactive); invalid values are rejected |
+| | `config-show` | Show the configuration including derived system/apps domains and certificate SANs |
+| Local DNS | `dns` | Local resolver (dnsmasq launch agent + `/etc/resolver`): demo domains resolve to `127.0.0.1`, even offline (asks once for sudo) |
+| | `dns-check` | Verify the local resolver |
+| | `dns-remove` | Remove the local resolver (sudo) |
+| Public DNS | `dns-public` | Create/update A records `*.sys` / `*.app` / … → `127.0.0.1` in Google Cloud DNS (idempotent) |
+| DNS credentials | `secrets-set-dns` | Store the GCP DNS service-account key in the macOS Keychain (`FILE=…`, optional `DELETE_SOURCE=1`) |
+| | `secrets-check` | Check that DNS-01 credentials are available |
+| Certificates | `certs` | Issue/renew the Let's Encrypt wildcard certificate via DNS-01 when needed (`ACME_ENV=staging\|prod`, `FORCE_RENEW=1`) |
+| | `certs-status` | Show days left, SANs and issuer |
+| | `certs-cleanup` | Remove stale `_acme-challenge` TXT records (e.g. after an aborted run) |
+| | `certs-autorenew` | Install a daily launchd renewal job (`REMOVE=1` removes it) |
+| Operations | `status` | Overview: provider, nodes, pods, CF API |
+| | `doctor` | Health checks: config, resolver, subnet overlap with the current Wi-Fi, certificate expiry, cluster, CF API, clock drift, global config guard |
+| | `repair` | Re-apply provider state and gateway certificate, then run `doctor` |
+| Cluster access | `kubectl` | kubectl against the demo cluster via the project kubeconfig (`ARGS="get pods -A"`) |
+| | `k9s` | k9s against the demo cluster |
+| | `shell` | Subshell with `KUBECONFIG` and `CF_HOME` of the demo (kubectl/helm/k9s/cf usable directly) |
+| | `kube-env` | Print export lines: `eval "$(make -s kube-env)"` |
+| cf CLI | `cf` | cf CLI against the demo foundation with a project-local `CF_HOME` (`ARGS="apps"`) |
+| Upstream | `upstream` | Bring the upstream checkout to the pin in `upstream.lock` and apply `patches/` |
+| Repository hygiene | `hooks` | Enable the secret-scanning git hooks (gitleaks on commit and push) |
+| | `secrets-scan` | Scan the entire git history and all tracked files for secrets |
+| | `lint-language` | List lines that look German (repository content must be English) |
+| | `test` | shellcheck + bats unit tests + language check |
+
+### Same name as upstream, extended behaviour
+
+| Target | What cf-kind-demo adds |
+|---|---|
+| `up` | Cluster created by the provider adapter (project kubeconfig, ports bound to `127.0.0.1` only, pinned Docker subnet), domain patch applied, gateway certificate installed, then login + bootstrap |
+| `down` | Also removes the (empty) Docker network `kind`; image caches, upstream checkout and local config are kept |
+| `login` | Project-local `CF_HOME`; password passed via environment, never on the command line; no `--skip-ssl-validation` with a Let's Encrypt prod certificate |
+| `bootstrap` | Upstream bootstrap with the upstream tools (e.g. `yq`) provisioned first |
+| `smoke` | Pushes `hello-js` and checks it via HTTPS, independent of DNS (`--resolve … 127.0.0.1`) |
+
+Not exposed directly: `init`/`install` (run inside `up`), `create-kind`/`delete-kind` (replaced by the provider adapter),
+`create-org` (part of `bootstrap`), `bootstrap-complete` and `cats`.
+
 ## Configuration
 
 The defaults are in [`config.env.example`](config.env.example). `make configure` writes local values to `config.env`;
