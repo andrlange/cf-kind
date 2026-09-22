@@ -27,14 +27,14 @@ setup() {
   echo 'DOMAIN="kind.cfapps.cool"' > "$CFKD_CONFIG"
   run "$CFKD_ROOT/scripts/configure.sh" DOMAIN_LAYOUT=diagonal
   [ "$status" -ne 0 ]
-  [[ "$output" == *"DOMAIN_LAYOUT"* ]]
+  [[ "$output" == *"DOMAIN_LAYOUT"* ]] || false
   [ "$(cat "$CFKD_CONFIG")" = 'DOMAIN="kind.cfapps.cool"' ]
 }
 
 @test "configure rejects unknown keys" {
   run "$CFKD_ROOT/scripts/configure.sh" FOO=bar
   [ "$status" -ne 0 ]
-  [[ "$output" == *"FOO"* ]]
+  [[ "$output" == *"FOO"* ]] || false
 }
 
 @test "configure rejects special characters in values" {
@@ -54,12 +54,12 @@ setup() {
   echo 'DOMAIN="kind.cfapps.cool"' > "$CFKD_CONFIG"
   run "$CFKD_ROOT/scripts/configure.sh" --show
   [ "$status" -eq 0 ]
-  [[ "$output" == *"SYSTEM_DOMAIN"*"sys.kind.cfapps.cool"* ]]
-  [[ "$output" == *"APPS_DOMAIN"*"app.kind.cfapps.cool"* ]]
+  [[ "$output" == *"SYSTEM_DOMAIN"*"sys.kind.cfapps.cool"* ]] || false
+  [[ "$output" == *"APPS_DOMAIN"*"app.kind.cfapps.cool"* ]] || false
 }
 
 @test "without arguments and without a TTY configure aborts with a hint" {
   run "$CFKD_ROOT/scripts/configure.sh" < /dev/null
   [ "$status" -ne 0 ]
-  [[ "$output" == *"KEY=VALUE"* ]]
+  [[ "$output" == *"KEY=VALUE"* ]] || false
 }

@@ -20,7 +20,7 @@ Y
   run render_kind_config "$src"
   [ "$status" -eq 0 ]
   [ "$(grep -c 'listenAddress: "127.0.0.1"' <<<"$output")" -eq 2 ]
-  [[ "$output" == *$'    hostPort: 80\n    listenAddress: "127.0.0.1"'* ]]
+  [[ "$output" == *$'    hostPort: 80\n    listenAddress: "127.0.0.1"'* ]] || false
 }
 
 @test "render_kind_config leaves the rest unchanged" {
@@ -36,9 +36,9 @@ Y
 
 @test "render_mirror_hosts_toml points at the cache container" {
   run render_mirror_hosts_toml ghcr-io https://ghcr.io
-  [[ "$output" == *'server = "https://ghcr.io"'* ]]
-  [[ "$output" == *'[host."http://ghcr-io:5000"]'* ]]
-  [[ "$output" == *'capabilities = ["pull", "resolve"]'* ]]
+  [[ "$output" == *'server = "https://ghcr.io"'* ]] || false
+  [[ "$output" == *'[host."http://ghcr-io:5000"]'* ]] || false
+  [[ "$output" == *'capabilities = ["pull", "resolve"]'* ]] || false
 }
 
 @test "provider_kube_context is kind-cfk8s" {
@@ -59,7 +59,7 @@ Y
   _kind_tools() { export PATH="$BATS_TEST_TMPDIR/stub:$PATH"; }
   PATH="/usr/bin:/bin" run provider_health
   [ "$status" -eq 0 ]
-  [[ "$output" == *"all nodes Ready"* ]]
+  [[ "$output" == *"all nodes Ready"* ]] || false
 }
 
 @test "kind_network_args pins the configured subnet and keeps masquerading" {

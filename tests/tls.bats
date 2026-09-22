@@ -12,9 +12,9 @@ setup() {
   issue_from_ca "$ca/ca.crt" "$ca/ca.key" "*.sys.x.io *.app.x.io x.io" "$out"
   openssl verify -CAfile "$ca/ca.crt" "$out/fullchain.pem" | grep -q ': OK'
   san="$(openssl x509 -noout -text -in "$out/fullchain.pem" | grep -A1 'Subject Alternative Name' | tail -1)"
-  [[ "$san" == *"DNS:*.sys.x.io"* ]]
-  [[ "$san" == *"DNS:*.app.x.io"* ]]
-  [[ "$san" == *"DNS:x.io"* ]]
+  [[ "$san" == *"DNS:*.sys.x.io"* ]] || false
+  [[ "$san" == *"DNS:*.app.x.io"* ]] || false
+  [[ "$san" == *"DNS:x.io"* ]] || false
   [ "$(stat -f %Lp "$out/privkey.pem")" = "600" ]
 }
 

@@ -49,7 +49,7 @@ setup() {
   load_config
   run validate_config
   [ "$status" -ne 0 ]
-  [[ "$output" == *"is not inside DNS_ZONE"* ]]
+  [[ "$output" == *"is not inside DNS_ZONE"* ]] || false
 }
 
 @test "validate_config: letsencrypt without a domain is invalid" {
@@ -57,7 +57,7 @@ setup() {
   load_config
   run validate_config
   [ "$status" -ne 0 ]
-  [[ "$output" == *"DOMAIN"* ]]
+  [[ "$output" == *"DOMAIN"* ]] || false
 }
 
 @test "validate_config: valid letsencrypt configuration" {
@@ -78,8 +78,8 @@ setup() {
   load_config
   run validate_config
   [ "$status" -ne 0 ]
-  [[ "$output" == *"K8S_PROVIDER"* ]]
-  [[ "$output" == *"DOMAIN_LAYOUT"* ]]
+  [[ "$output" == *"K8S_PROVIDER"* ]] || false
+  [[ "$output" == *"DOMAIN_LAYOUT"* ]] || false
 }
 
 # Let's Encrypt rejects names already covered by a wildcard in the same request ("redundant with a wildcard domain")
@@ -126,7 +126,7 @@ assert_no_redundant_sans() {
   load_config
   run validate_config
   [ "$status" -ne 0 ]
-  [[ "$output" == *"KIND_SUBNET"* ]]
+  [[ "$output" == *"KIND_SUBNET"* ]] || false
 }
 
 @test "validate_config: letsencrypt with gcloud requires GCP_PROJECT" {
@@ -134,5 +134,5 @@ assert_no_redundant_sans() {
   load_config
   run validate_config
   [ "$status" -ne 0 ]
-  [[ "$output" == *"GCP_PROJECT"* ]]
+  [[ "$output" == *"GCP_PROJECT"* ]] || false
 }

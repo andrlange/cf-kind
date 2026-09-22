@@ -8,7 +8,7 @@ setup() {
   printf 'echo "hello world"\n# prüft die Konfiguration\nlog_ok "Konfiguration gespeichert"\n' > "$BATS_TEST_TMPDIR/a.sh"  # lint-language: allow
   run german_lines "$BATS_TEST_TMPDIR/a.sh"
   [ "${#lines[@]}" -eq 2 ]
-  [[ "${lines[0]}" == *":2:"* ]]
+  [[ "${lines[0]}" == *":2:"* ]] || false
 }
 
 @test "german_lines passes English text, URLs and allowlisted names" {

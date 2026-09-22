@@ -65,11 +65,11 @@ make_cert() {
 
 @test "render_renew_plist: daily launchd job that runs make certs in the project" {
   run render_renew_plist /opt/homebrew/bin /repo /logs/renew.log
-  [[ "$output" == *"<string>io.cf-kind-demo.certs-renew</string>"* ]]
-  [[ "$output" == *"<string>make -C /repo certs</string>"* ]]
-  [[ "$output" == *"<key>StartCalendarInterval</key>"* ]]
-  [[ "$output" == *"<string>/logs/renew.log</string>"* ]]
-  [[ "$output" == *"/opt/homebrew/bin"* ]]
+  [[ "$output" == *"<string>io.cf-kind-demo.certs-renew</string>"* ]] || false
+  [[ "$output" == *"<string>make -C /repo certs</string>"* ]] || false
+  [[ "$output" == *"<key>StartCalendarInterval</key>"* ]] || false
+  [[ "$output" == *"<string>/logs/renew.log</string>"* ]] || false
+  [[ "$output" == *"/opt/homebrew/bin"* ]] || false
   printf '%s' "$output" > "$BATS_TEST_TMPDIR/p.plist"
   plutil -lint "$BATS_TEST_TMPDIR/p.plist"
 }

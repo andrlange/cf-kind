@@ -30,7 +30,7 @@ setup() {
   chmod 644 "$SA"
   ACME_DNS_CREDENTIALS="$SA" run check_dns
   [ "$status" -ne 0 ]
-  [[ "$output" == *"0600"* ]]
+  [[ "$output" == *"0600"* ]] || false
   chmod 600 "$SA"
   ACME_DNS_CREDENTIALS="$SA" run check_dns
   [ "$status" -eq 0 ]

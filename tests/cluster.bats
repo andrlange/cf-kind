@@ -12,7 +12,7 @@ setup() {
 @test "load_provider rejects unknown providers" {
   run load_provider doesnotexist
   [ "$status" -ne 0 ]
-  [[ "$output" == *"doesnotexist"* ]]
+  [[ "$output" == *"doesnotexist"* ]] || false
 }
 
 @test "load_provider rejects adapters without mandatory functions" {
@@ -20,5 +20,5 @@ setup() {
   echo 'provider_ensure() { :; }' > "$BATS_TEST_TMPDIR/providers/half.sh"
   PROVIDERS_DIR="$BATS_TEST_TMPDIR/providers" run load_provider half
   [ "$status" -ne 0 ]
-  [[ "$output" == *"does not implement provider_preflight"* ]]
+  [[ "$output" == *"does not implement provider_preflight"* ]] || false
 }

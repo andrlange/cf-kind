@@ -39,7 +39,7 @@ P
   [ "$(sed -n 2p "$repo/file.txt")" = "changed" ]
   PATCHES_DIR="$BATS_TEST_TMPDIR/patches" run apply_patches "$repo"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"already applied"* ]]
+  [[ "$output" == *"already applied"* ]] || false
   [ "$(sed -n 2p "$repo/file.txt")" = "changed" ]
 }
 
@@ -69,7 +69,7 @@ P
 @test "upstream_env puts upstream/bin on the PATH (tools such as yq/crane from the upstream pin)" {
   UPSTREAM_DIR="$BATS_TEST_TMPDIR/up"
   upstream_env
-  [[ ":$PATH:" == *":$UPSTREAM_DIR/bin:"* ]]
+  [[ ":$PATH:" == *":$UPSTREAM_DIR/bin:"* ]] || false
 }
 
 @test "upstream_make installs the tools required by upstream scripts beforehand" {
@@ -110,7 +110,7 @@ T
   load_config
   upstream_env
   [ "$CF_CERT_EXTRA_SANS" = "$CERT_SANS" ]
-  [[ "$CF_CERT_EXTRA_SANS" == *"*.sys.kind.cfapps.cool"* ]]
+  [[ "$CF_CERT_EXTRA_SANS" == *"*.sys.kind.cfapps.cool"* ]] || false
 }
 
 @test "upstream_env adds no extra SANs without an own domain" {

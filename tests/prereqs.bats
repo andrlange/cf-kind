@@ -70,7 +70,7 @@ STUB
   MODE=check
   run check_brew
   [ "$status" -eq 0 ]
-  [[ "$output" == *"missing tools: dnsmasq lego"* ]]
+  [[ "$output" == *"missing tools: dnsmasq lego"* ]] || false
 }
 
 @test "missing_brew_formulae extracts the formula names" {
