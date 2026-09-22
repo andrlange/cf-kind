@@ -18,7 +18,7 @@ Existing German content is translated in roadmap phase **L** (see `docs/superpow
 
 ### In Scope
 - **One command to set up** (`make up`), **one to tear down** (`make down`), one for a complete reset (`make nuke`).
-- **Selectable Kubernetes base** (`K8S_PROVIDER`), starting with **Docker Desktop Kubernetes**, plus `kind` (upstream reference) and optionally `k3d` (chapter 4).
+- **Selectable Kubernetes base** (`K8S_PROVIDER`): `kind` (default, upstream reference) and optionally `k3d` (chapter 4). Docker Desktop's built-in Kubernetes was evaluated and rejected (4.1).
 - **Prerequisite check and installation** via Homebrew (`make prereqs` / `Brewfile`), idempotent, also on "foreign" Macs.
 - **Network robustness**: CF API, UAA, UI and apps remain reachable across IP changes, DNS changes and without internet.
 - **Airgapped operation**: `make up`, `cf push` (incl. staging), service provisioning and the demo run **without internet** once the
@@ -89,13 +89,13 @@ or documented patches in `patches/` that are applied on checkout. Patches are ne
 
 ### Container runtime
 - **Docker Desktop** ≥ 4.4x (tested locally: 4.91): Apple Virtualization Framework, **Rosetta enabled**, `docker compose` v2,
-  **containerd image store enabled** (`UseContainerdSnapshotter: true` — prerequisite for the kind mode of Docker Desktop Kubernetes).
+  Docker Desktop's built-in **Kubernetes must stay disabled** (it writes into global kubeconfigs, see 4.1).
 - Podman is not supported. If Podman Desktop is installed in parallel, the Docker context `desktop-linux` must be active.
 
 ### Tools via Homebrew (`Brewfile`)
 | Tool | Brew | Purpose | Required |
 |---|---|---|---|
-| Docker Desktop | `cask "docker-desktop"` | Runtime (+ Kubernetes for provider `docker-desktop`) | yes |
+| Docker Desktop | `cask "docker-desktop"` | container runtime for kind | yes |
 | cf CLI v8 | `tap "cloudfoundry/tap"`, `brew "cloudfoundry/tap/cf-cli@8"` | Login, push, services | yes |
 | jq | `brew "jq"` | Scripts | yes |
 | dnsmasq | `brew "dnsmasq"` | local resolution of `*.127-0-0-1.nip.io` (offline / DNS rebind protection) | yes |
@@ -117,44 +117,34 @@ containerd image store; `~/Library/Group Containers/group.com.docker/settings-st
 
 ## 4. Kubernetes base: provider model (easy to handle)
 
-Selection via `K8S_PROVIDER` in `config.env`. **All three run on Docker Desktop** — so the presenter needs only *one* runtime.
+Selection via `K8S_PROVIDER` in `config.env`. **Both supported providers run on Docker Desktop** — so the presenter needs only *one* runtime.
 
 | Provider | Role | Short assessment |
 |---|---|---|
-| `docker-desktop` | **Start provider, "zero install"** | Kubernetes built in (kind mode, multi-node, version selectable), LoadBalancers land on `localhost`. But: **CNI (kindnet) + kube-proxy fixed**, no port mappings, no FeatureGates, containerd config only via `docker exec`. |
-| `kind` | **Reference / fallback** | exactly like upstream and its CI, full control (Cilium, port mappings, mirrors). Own CLI, test restart behavior with multi-node. |
-| `k3d` | optional, later | brew-installable, multi-node, `registries.yaml` for mirrors, `-p 80:80@loadbalancer`. But: **containerd paths of k3s** (`/run/k3s/containerd`, `/var/lib/rancher/k3s/agent/containerd`) → patch k8s-rep hostPaths. |
+| `kind` | **Default / reference** | exactly like upstream and its CI, full control (Cilium, port mappings, mirrors, kubeconfig written only to the project file). |
+| `k3d` | optional, later | brew-installable, multi-node, `registries.yaml` for mirrors, `-p 80:80@loadbalancer`, `--kubeconfig-update-default=false`. But: **containerd paths of k3s** (`/run/k3s/containerd`, `/var/lib/rancher/k3s/agent/containerd`) → patch k8s-rep hostPaths. |
 
-Deliberately **not** supported: Docker Desktop **kubeadm mode** (1 node, presumably cri-dockerd → rep incompatible),
-**OrbStack** (1 node, flannel, paid for commercial use), **Colima/Rancher Desktop** (1 node, k3s paths, hard with Cilium),
-**minikube** (possible, but no added value over kind).
+Deliberately **not** supported: **Docker Desktop's built-in Kubernetes** (both modes, see 4.1), **OrbStack** (1 node, flannel, paid for
+commercial use), **Colima/Rancher Desktop** (1 node, k3s paths, hard with Cilium), **minikube** (possible, but no added value over kind).
 
-### 4.1 Provider `docker-desktop` — what is needed
-Local state: Docker Desktop 4.91, Kubernetes disabled, mode `kind`, 1 node, v1.36.1 (`docker desktop kubernetes status`).
+### 4.1 Docker Desktop's built-in Kubernetes — evaluated and rejected (2026-09-22)
+Tried as a "zero install" provider (kind mode, 3 nodes, enabled by patching `settings-store.json`). Rejected because it conflicts with the
+binding rule "no global kubeconfig" (13.2):
+- Docker Desktop writes its `docker-desktop` context into the file named by the `KUBECONFIG` of the process that starts it — in the test
+  it was added to another project's kubeconfig **and made the current-context** (restored immediately).
+- Its own health check nevertheless reads **`~/.kube/config`** and fails if that file is missing or a dangling symlink
+  ("reading kubeconfig: stat ~/.kube/config: no such file or directory") — the feature cannot work without a global kubeconfig.
+- Further limitations found in the research: CNI (kindnet) and kube-proxy fixed (no Cilium, no CF network policies), NodePorts not reachable,
+  no port mappings or FeatureGates, node state must be re-applied after every Docker restart.
 
-1. **Enable without clicking**: There is **no CLI to switch it on** (`docker desktop kubernetes` only knows `status`, `images`, `reset-cluster`).
-   Flow: `docker desktop stop` → patch `settings-store.json` (`KubernetesEnabled=true`, `KubernetesMode=kind`, `KubernetesNodesCount=3`,
-   `KubernetesNodesVersion=<pin>`) → `docker desktop start` → wait until context `docker-desktop` is Ready. Back up the file first,
-   announce the change (modifies the user's Docker Desktop configuration). Keys come from the backend binary — *to be verified*.
-2. **No `create-kind.sh`**: skip upstream `create-kind`, export kubeconfig context `docker-desktop` to `upstream/temp/kubeconfig`.
-3. **Mark cell node**: label `desktop-worker*` with `cloudfoundry.org/cell=true`, `cloudfoundry.org/zone=z1` and taint it (via kubectl, idempotent).
-4. **CNI**: Cilium without kube-proxy is not possible. New path `CNI=none` (patch): omit the CNI release and `policy-agent`, omit the network policies of the
-   base chart → **container-to-container policies/app egress rules are missing** in this provider. Evaluate later: Cilium in
-   `generic-veth` chaining on kindnet with `kubeProxyReplacement=false` (beta).
-5. **Exposure**: Istio gateway service as `LoadBalancer` instead of NodePort (patch/values). Only 80, 443, 2222, 32000–32019 via LoadBalancer —
-   split the service, otherwise 8080/9000/15021 … also bind on the Mac. Check whether it binds to `127.0.0.1` or `0.0.0.0`.
-   NodePorts are **not** reachable in the kind mode of Docker Desktop.
-6. **Registry mirrors**: write `hosts.toml` under `/etc/containerd/certs.d/` via `docker exec desktop-<node>`; attach cache/AK containers to the
-   node network (determine network name). Alternatively `KubernetesImagesRepository` for the node images themselves (airgap).
-7. **After every Docker restart** reapply steps 3 and 6 (`make repair`). Known risk: cluster reset after restart
-   ([docker/for-mac#7745](https://github.com/docker/for-mac/issues/7745)) — test in 4.91.
-8. **Teardown**: delete CF releases, optionally `docker desktop kubernetes reset-cluster`; reset the Kubernetes setting on request.
+Consequence: `K8S_PROVIDER=docker-desktop` is rejected by `validate_config`; `docs/PREREQUISITES.md` tells users to keep Docker Desktop's
+Kubernetes **disabled**. Docker Desktop itself remains the container runtime for `kind`.
 
 ### 4.2 Provider `kind`
 Upstream unchanged (+ own Docker network with fixed subnet, static node IPs, port mappings on `127.0.0.1` instead of `0.0.0.0`).
 According to kind, multi-node restarts work since v0.15 ([PR #2775](https://github.com/kubernetes-sigs/kind/pull/2775)); [#2045](https://github.com/kubernetes-sigs/kind/issues/2045) is still open → test.
 
-### 4.3 Provider `k3d` (phase 2)
+### 4.3 Provider `k3d` (phase 9, optional)
 Cluster with `--k3s-arg --flannel-backend=none --disable-network-policy --disable=traefik,servicelb?` + Cilium (bpf mount workaround),
 cell label/taint via `--k3s-node-label`/`--node-taint`, mirrors via `registries.yaml`, ports via `@loadbalancer`,
 k8s-rep hostPaths via helmfile `jsonPatches` to the k3s containerd paths.
@@ -165,7 +155,7 @@ Every provider implements the same functions; the Makefile knows only these:
 `expose` (NodePort+mapping | LoadBalancer | @loadbalancer, check: 80/443/2222 answer on 127.0.0.1) · `label_taint_cells` ·
 `configure_mirrors` + `node_network` · `health` / `repair` (node Ready, cell label, mirrors, ports; reapply after restart/sleep).
 
-The feature matrix per provider is maintained in `docs/providers.md` (what is missing where, e.g. network policies with `docker-desktop`).
+The feature matrix per provider is maintained in `docs/providers.md` once a second provider exists.
 
 ---
 
@@ -467,7 +457,7 @@ Stopping the agent instead would break resolution for the domain entirely (macOS
 |---|---|
 | `nip.io` or public DNS for `DOMAIN` not reachable (offline, captive portal, airgapped) | dnsmasq locally: `address=/<DOMAIN>/127.0.0.1`, plus `/etc/resolver/<DOMAIN>` (`nameserver 127.0.0.1`) — applies to `127-0-0-1.nip.io` and e.g. `kind.cfapps.cool` (covers `sys.` and `app.`). One-time `sudo`. Optionally additionally public records `*.sys.`/`*.app.<DOMAIN>` → `127.0.0.1` via `make dns-public`. |
 | DNS rebind protection in router/corporate DNS (e.g. FRITZ!Box) | as above |
-| Docker network collides with Wi-Fi subnet (e.g. 172.18.0.0/16) | provider `kind`: create network `kind` beforehand with an unusual subnet (`10.213.0.0/16`); `docker-desktop`: check whether configurable; `make doctor` warns |
+| Docker network collides with Wi-Fi subnet (e.g. 172.18.0.0/16) | provider `kind`: create network `kind` beforehand with an unusual subnet (`10.213.0.0/16`); `make doctor` warns |
 | Node IPs change after Docker restart ([kind#2045](https://github.com/kubernetes-sigs/kind/issues/2045)) | `kind`: static node IPs (to be verified); all providers: `make repair` or quick recreate with warm buffer |
 | Docker Desktop K8s loses cluster/labels/mirrors after restart | `make repair` reapplies labels, taints, mirrors; detect the reset case and redeploy |
 | Upstream DNS changes | CoreDNS → Docker's embedded DNS follows the host; `make doctor` tests |
@@ -493,7 +483,7 @@ afterwards `cf apps`, `curl -k https://hello-js.apps.127-0-0-1.nip.io`, a new `c
 ├── upstream/               # pinned checkout of cloudfoundry/kind-deployment (do not edit)
 ├── upstream.lock
 ├── patches/                # e.g. CNI=none, gateway LoadBalancer, k3s hostPaths, airgap URLs — each with rationale
-├── providers/              # docker-desktop.sh, kind.sh, k3d.sh (adapter interface chapter 4.4)
+├── providers/              # kind.sh (k3d.sh later) — adapter interface chapter 4.4
 ├── airgap/                 # compose.yaml (AK + Garage), configure.py, artifacts.yaml, fill.sh, verify.sh
 ├── services/
 │   ├── broker/             # Go broker (brokerapi v13), Dockerfile (arm64)
@@ -565,11 +555,7 @@ cf-kind-demo must **neither read nor write this file nor change the current-cont
   - `kind`: `kind create cluster --kubeconfig "$CFKD_HOME/kubeconfig"` (or `KUBECONFIG` set) — upstream `create-kind.sh` otherwise writes
     globally → patch or own call. `kind get kubeconfig --name cfk8s` to regenerate.
   - `k3d`: `--kubeconfig-update-default=false --kubeconfig-switch-context=false`, then `k3d kubeconfig get`.
-  - `docker-desktop`: when enabled, Docker Desktop **itself** adds a context `docker-desktop` to `~/.kube/config` and may
-    switch the current-context — this cannot be prevented. Therefore: remember `current-context` before enabling, afterwards extract the
-    `docker-desktop` context via `kubectl config view --raw --minify --context docker-desktop` into the project kubeconfig and
-    **restore** the original current-context; `make doctor` warns if it has been changed. We leave the entry created by
-    Docker Desktop itself in place (it belongs to Docker Desktop).
+  - Docker Desktop's built-in Kubernetes is not supported for exactly this reason (4.1).
 - **Transparency is still fully given** — everything in the cluster remains viewable and controllable:
   - `make kubectl ARGS="get pods -A"` and `make k9s` (use the project kubeconfig),
   - `make shell`: subshell with `KUBECONFIG` set and a prompt hint, in which normal `kubectl`/`helm`/`k9s` work,
@@ -577,7 +563,7 @@ cf-kind-demo must **neither read nor write this file nor change the current-cont
   - `make status` shows the path of the kubeconfig and the context.
 - **Same principle for the cf CLI**: `CF_HOME=$CFKD_HOME/cf` for every call (`lib.sh: use_project_cf_home`), so that
   `~/.cf/config.json` of other foundations remains untouched; access via `make cf ARGS=…`, `make shell` or `eval "$(make -s kube-env)"`.
-- Tests check: after `make up`/`down`, `~/.kube/config` (hash) is unchanged (exception: `docker-desktop` entry, see above), and the
+- Tests check: after `make up`/`down`, `~/.kube/config` (hash) is unchanged, and the
   scripts run with `KUBECONFIG=/dev/null` in the caller's environment.
 
 ### 13.3 Secrets never enter Git (binding)

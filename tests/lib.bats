@@ -136,3 +136,16 @@ assert_no_redundant_sans() {
   [ "$status" -ne 0 ]
   [[ "$output" == *"GCP_PROJECT"* ]] || false
 }
+
+@test "validate_config: docker-desktop is rejected with the reason (needs a global ~/.kube/config)" {
+  echo 'K8S_PROVIDER="docker-desktop"' > "$CFKD_CONFIG"
+  load_config
+  run validate_config
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"global ~/.kube/config"* ]] || false
+}
+
+@test "the default provider is kind" {
+  load_config
+  [ "$K8S_PROVIDER" = "kind" ]
+}

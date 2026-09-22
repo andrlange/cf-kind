@@ -24,13 +24,15 @@ See **[docs/STATUS.md](docs/STATUS.md)** for the current state of every phase: w
 
 | Done | In progress | Open |
 |---|---|---|
-| 0 Prerequisites · 1 Upstream + `kind` · 3 Domain & TLS · L English | 4 Network robustness | 2 `docker-desktop` · 5 Airgap · 6 Services · 7 Developer experience · 8 arm64 buildpacks · 9 `k3d` |
+| 0 Prerequisites · 1 Upstream + `kind` · 3 Domain & TLS · L English | 4 Network robustness | 5 Airgap · 6 Services · 7 Developer experience · 8 arm64 buildpacks · 9 `k3d` |
 
 ## Prerequisites
 
+See **[docs/PREREQUISITES.md](docs/PREREQUISITES.md)** for the full list: Docker Desktop settings, tools, DNS, Let's Encrypt, and what is changed on your system.
+
 - Mac with Apple Silicon and at least 16 GB RAM (32 GB recommended)
 - [Homebrew](https://brew.sh)
-- Docker Desktop with Rosetta and containerd image store enabled. If it is missing, `make prereqs` installs it.
+- Docker Desktop with Rosetta enabled and its built-in Kubernetes **disabled**. If Docker Desktop is missing, `make prereqs` installs it.
 
 ## Quickstart (Phase 0)
 

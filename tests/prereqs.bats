@@ -40,12 +40,6 @@ setup() {
   [ "$N_FAIL" -eq 1 ]
 }
 
-@test "severity_for_provider: Docker Desktop checks are hard only for provider docker-desktop" {
-  K8S_PROVIDER=docker-desktop run severity_for_provider docker-desktop
-  [ "$output" = "fail" ]
-  K8S_PROVIDER=kind run severity_for_provider docker-desktop
-  [ "$output" = "warn" ]
-}
 
 # brew stub: bundle check reports missing formulae (like Homebrew 7 with --no-upgrade)
 stub_brew_missing() {

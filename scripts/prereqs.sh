@@ -29,10 +29,6 @@ check() {
   return 0
 }
 
-# Checks that are mandatory only for a specific provider are warnings otherwise.
-severity_for_provider() {
-  if [[ "${K8S_PROVIDER:-}" == "$1" ]]; then echo fail; else echo warn; fi
-}
 
 port_in_use() {
   lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1
@@ -98,15 +94,14 @@ check_docker() {
   if [[ "$ctx" == "desktop-linux" ]]; then check ok "Docker context desktop-linux"
   else check warn "Docker context is '$ctx'" "run: docker context use desktop-linux (e.g. when Podman Desktop is installed alongside)"; fi
 
-  local dd_sev ver
-  dd_sev="$(severity_for_provider docker-desktop)"
+  local ver
   ver="$(docker version --format '{{.Server.Platform.Name}}' 2>/dev/null | parse_docker_desktop_version)"
   if [[ -z "$ver" ]]; then
-    check "$dd_sev" "Docker is running, but not Docker Desktop" "use Docker Desktop (chapter 3)"
+    check warn "Docker is running, but not Docker Desktop (untested)" "use Docker Desktop (docs/PREREQUISITES.md)"
   elif version_ge "$ver" "$MIN_DOCKER_DESKTOP"; then
     check ok "Docker Desktop $ver"
   else
-    check "$dd_sev" "Docker Desktop $ver is older than $MIN_DOCKER_DESKTOP" "update Docker Desktop (docker desktop update)"
+    check warn "Docker Desktop $ver is older than $MIN_DOCKER_DESKTOP" "update Docker Desktop (docker desktop update)"
   fi
 
   local mem cpus
@@ -118,11 +113,6 @@ check_docker() {
   if ((cpus < REC_CPUS)); then check warn "Docker CPUs ${cpus} (recommended ≥ ${REC_CPUS})" "Docker Desktop → Settings → Resources → CPUs"
   else check ok "Docker CPUs ${cpus}"; fi
 
-  if docker info --format '{{json .DriverStatus}}' 2>/dev/null | grep -q 'containerd.snapshotter'; then
-    check ok "containerd image store active"
-  else
-    check "$dd_sev" "containerd image store not active (required for Docker Desktop Kubernetes in kind mode)" "Docker Desktop → Settings → General → 'Use containerd for pulling and storing images'"
-  fi
   return 0
 }
 

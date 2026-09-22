@@ -78,7 +78,7 @@ interactive() {
     read -r -p "$2 [$3]: " v
     answers+=("$1=${v:-$3}")
   }
-  _ask K8S_PROVIDER "Kubernetes base (docker-desktop|kind|k3d)" "$K8S_PROVIDER"
+  _ask K8S_PROVIDER "Kubernetes base (kind|k3d)" "$K8S_PROVIDER"
   _ask TLS_MODE "TLS mode (selfsigned|letsencrypt)" "$TLS_MODE"
   local current_domain="$DOMAIN"; [[ "$current_domain" == "$NIP_DOMAIN" ]] && current_domain=""
   _ask DOMAIN "Domain (empty = $NIP_DOMAIN)" "$current_domain"

@@ -105,7 +105,11 @@ validate_config() {
   local errors=0
   _cfg_err() { printf '%s\n' "$*"; errors=$((errors + 1)); }
 
-  case "${K8S_PROVIDER:-}" in docker-desktop | kind | k3d) ;; *) _cfg_err "K8S_PROVIDER='${K8S_PROVIDER:-}' invalid (allowed: docker-desktop | kind | k3d)" ;; esac
+  case "${K8S_PROVIDER:-}" in
+    kind | k3d) ;;
+    docker-desktop) _cfg_err "K8S_PROVIDER=docker-desktop is not supported: Docker Desktop's Kubernetes requires a global ~/.kube/config (see docs/PREREQUISITES.md) — use K8S_PROVIDER=kind" ;;
+    *) _cfg_err "K8S_PROVIDER='${K8S_PROVIDER:-}' invalid (allowed: kind | k3d)" ;;
+  esac
   case "${TLS_MODE:-}" in selfsigned | letsencrypt) ;; *) _cfg_err "TLS_MODE='${TLS_MODE:-}' invalid (allowed: selfsigned | letsencrypt)" ;; esac
   case "${DOMAIN_LAYOUT:-}" in split | flat) ;; *) _cfg_err "DOMAIN_LAYOUT='${DOMAIN_LAYOUT:-}' invalid (allowed: split | flat)" ;; esac
   case "${AIRGAP:-}" in true | false) ;; *) _cfg_err "AIRGAP='${AIRGAP:-}' invalid (allowed: true | false)" ;; esac

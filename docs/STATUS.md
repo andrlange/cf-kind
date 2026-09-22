@@ -9,7 +9,7 @@ _Last updated: 2026-09-22_
 |---|---|---|
 | [0](#phase-0--prerequisites) | Prerequisites | ✅ done |
 | [1](#phase-1--upstream--provider-kind) | Upstream + provider `kind` | ✅ done |
-| [2](#phase-2--provider-docker-desktop) | Provider `docker-desktop` | ⬜ open |
+| [2](#phase-2--provider-docker-desktop-dropped) | Provider `docker-desktop` | ❌ dropped |
 | [3](#phase-3--domain--tls) | Domain & TLS | ✅ done |
 | [4](#phase-4--network-robustness) | Network robustness | 🟡 in progress |
 | [5](#phase-5--airgap) | Airgap | ⬜ open |
@@ -19,7 +19,7 @@ _Last updated: 2026-09-22_
 | [9](#phase-9--provider-k3d-optional) | Provider `k3d` (optional) | ⬜ open |
 | [L](#phase-l--language-english) | Language: English | ✅ done |
 
-Legend: ✅ done · 🟡 in progress · ⬜ open
+Legend: ✅ done · 🟡 in progress · ⬜ open · ❌ dropped
 
 ---
 
@@ -42,20 +42,17 @@ Legend: ✅ done · 🟡 in progress · ⬜ open
 - `make up`, `make down`, `make status`, `make login`, `make bootstrap`, `make smoke` and `make cf` all work.
 - Verified: `hello-js` is pushed and answers over HTTPS. `make down` cleans up in about 5 seconds, and the image caches are kept.
 
-## Phase 2 — Provider `docker-desktop`
-**Status:** ⬜ open
+## Phase 2 — Provider `docker-desktop` (dropped)
+**Status:** ❌ dropped (2026-09-22)
 
-Goal: use Docker Desktop's built-in Kubernetes (kind mode) as a zero-install alternative.
+Docker Desktop's built-in Kubernetes (kind mode) was tried as a zero-install alternative and rejected, because it conflicts with the
+rule that the project never touches global Kubernetes configuration:
+- It writes its `docker-desktop` context into whatever kubeconfig the `KUBECONFIG` variable names, and makes it the current context.
+- Its own health check requires a real `~/.kube/config`.
 
-Planned work:
-- Enable Kubernetes by patching the settings file.
-- Label and taint the Diego cell node.
-- Run without Cilium (`CNI=none` patch).
-- Expose the gateway through a `LoadBalancer` service.
-- Configure registry mirrors via `docker exec`.
-- Re-apply this state after Docker restarts.
-
-Needs the maintainer's approval before the Docker Desktop settings are changed.
+It also cannot run Cilium or CF network policies, and its NodePorts are not reachable.
+`kind` stays the default provider. Keep Docker Desktop's Kubernetes **disabled** (see [PREREQUISITES.md](PREREQUISITES.md)).
+`K8S_PROVIDER=docker-desktop` is refused by `make configure`.
 
 ## Phase 3 — Domain & TLS
 **Status:** ✅ done
