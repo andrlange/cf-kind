@@ -18,16 +18,17 @@ Architecture, scope and decisions are in [`CLAUDE.md`](CLAUDE.md), the phases in
 
 | Phase | Content | Status |
 |---|---|---|
-| 0 | Prerequisites: tools, configuration (domain/TLS), local DNS, DNS credentials | **done** (open: `make dns` with sudo) |
+| 0 | Prerequisites: tools, configuration (domain/TLS), local DNS, DNS credentials | **done** |
 | 1 | Upstream + provider `kind` (reference) | **done** — `make up`, `make smoke` green |
 | 2 | Provider `docker-desktop` | planned |
-| 3 | Domain & TLS (Let's Encrypt, renewal) | **in progress** — `make certs` |
-| 4 | Network robustness (`doctor`/`repair`) | planned |
+| 3 | Domain & TLS (Let's Encrypt, renewal) | **done** — `https://api.sys.kind.cfapps.cool` with a Let's Encrypt wildcard, strict TLS verification green |
+| 4 | Network robustness (`doctor`/`repair`) | **in progress** — `make doctor` green; acceptance tests (Wi-Fi change, offline, Docker restart, sleep) open |
 | 5 | Airgap (Artifact Keeper) | planned |
 | 6 | Service automation (OSB broker + operators) | planned |
 | 7 | Developer experience (UI, demo apps) | planned |
 | 8 | arm64-native buildpack dependencies | planned |
 | 9 | Provider `k3d` (optional) | planned |
+| L | Language: English | **done** — `make lint-language` part of `make test` |
 
 ## Prerequisites
 
