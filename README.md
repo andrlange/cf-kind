@@ -94,7 +94,10 @@ Run `make` without arguments for the built-in help. The upstream `kind-deploymen
 | Local DNS | `dns` | Local resolver (dnsmasq launch agent + `/etc/resolver`): demo domains resolve to `127.0.0.1`, even offline (asks once for sudo) |
 | | `dns-check` | Verify the local resolver |
 | | `dns-remove` | Remove the local resolver (sudo) |
-| Public DNS | `dns-public` | Create/update A records `*.sys` / `*.app` / … → `127.0.0.1` in Google Cloud DNS (idempotent) |
+| | `dns-activate` | Demo names → `127.0.0.1` (run automatically by `make up`, no sudo) |
+| | `dns-deactivate` | Passthrough: demo names resolve via the current network's DNS again (run automatically by `make down`) |
+| Public DNS | `dns-public` | Optional: A records `*.sys` / `*.app` / … → `127.0.0.1` in Google Cloud DNS for Macs without the local resolver. They keep resolving to `127.0.0.1` even while the stack is down |
+| | `dns-public-remove` | Remove those public records again (only records that point exclusively to `127.0.0.1`) |
 | DNS credentials | `secrets-set-dns` | Store the GCP DNS service-account key in the macOS Keychain (`FILE=…`, optional `DELETE_SOURCE=1`) |
 | | `secrets-check` | Check that DNS-01 credentials are available |
 | Certificates | `certs` | Issue/renew the Let's Encrypt wildcard certificate via DNS-01 when needed (`ACME_ENV=staging\|prod`, `FORCE_RENEW=1`) |
@@ -119,8 +122,8 @@ Run `make` without arguments for the built-in help. The upstream `kind-deploymen
 
 | Target | What cf-kind-demo adds |
 |---|---|
-| `up` | Cluster created by the provider adapter (project kubeconfig, ports bound to `127.0.0.1` only, pinned Docker subnet), domain patch applied, gateway certificate installed, then login + bootstrap |
-| `down` | Also removes the (empty) Docker network `kind`; image caches, upstream checkout and local config are kept |
+| `up` | Activates the local resolver (demo names → `127.0.0.1` only while the stack runs); cluster created by the provider adapter (project kubeconfig, ports bound to `127.0.0.1` only, pinned Docker subnet), domain patch applied, gateway certificate installed, then login + bootstrap |
+| `down` | Switches the local resolver to passthrough (demo names resolve normally again) and removes the (empty) Docker network `kind`; image caches, upstream checkout and local config are kept |
 | `login` | Project-local `CF_HOME`; password passed via environment, never on the command line; no `--skip-ssl-validation` with a Let's Encrypt prod certificate |
 | `bootstrap` | Upstream bootstrap with the upstream tools (e.g. `yq`) provisioned first |
 | `smoke` | Pushes `hello-js` and checks it via HTTPS, independent of DNS (`--resolve … 127.0.0.1`) |

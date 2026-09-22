@@ -28,3 +28,9 @@ setup() {
   [ "${lines[0]}" = "192.168.178.0/24" ]
   [ "${#lines[@]}" -eq 1 ]
 }
+
+@test "resolver_level: a running stack expects the active resolver mode" {
+  [ "$(resolver_level active)" = "ok" ]
+  [ "$(resolver_level passthrough)" = "warn" ]
+  [ "$(resolver_level absent)" = "warn" ]
+}

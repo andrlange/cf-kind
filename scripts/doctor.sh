@@ -68,9 +68,20 @@ check_config() {
   else report fail "configuration invalid: $problems" "make configure"; fi
 }
 
+# doctor checks a running stack, so the resolver should answer 127.0.0.1 (mode "active")
+resolver_level() {
+  if [[ "$1" == "active" ]]; then echo ok; else echo warn; fi
+}
+
 check_resolver() {
-  if "$CFKD_ROOT/scripts/dns.sh" check >/dev/null 2>&1; then report ok "local resolver answers for $DOMAIN (works offline)"
-  else report warn "local resolver not (fully) set up — names depend on public DNS" "make dns"; fi
+  local mode
+  mode="$(sed -nE 's/^# mode=(active|passthrough)$/\1/p' "$CFKD_HOME/dnsmasq.conf" 2>/dev/null | head -1)"
+  mode="${mode:-absent}"
+  if ! "$CFKD_ROOT/scripts/dns.sh" check >/dev/null 2>&1; then
+    report warn "local resolver not (fully) set up — names depend on public DNS" "run once: make dns"
+    return 0
+  fi
+  report "$(resolver_level "$mode")" "local resolver mode: $mode ($DOMAIN)" "run: make dns-activate (or make repair)"
 }
 
 check_network_overlap() {
@@ -148,6 +159,7 @@ cmd_repair() {
   upstream_ensure
   provider_ensure
   cmd_ensure
+  "$CFKD_ROOT/scripts/dns.sh" activate
   N_OK=0 N_WARN=0 N_FAIL=0
   cmd_check
 }

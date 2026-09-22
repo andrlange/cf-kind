@@ -32,8 +32,17 @@ dns-check: ## check the local resolver
 dns-remove: ## remove the local resolver (sudo)
 	@scripts/dns.sh remove
 
+dns-activate: ## demo names -> 127.0.0.1 (done by make up; no sudo)
+	@scripts/dns.sh activate
+
+dns-deactivate: ## passthrough: demo names resolve via the network's DNS again (done by make down)
+	@scripts/dns.sh deactivate
+
 dns-public: ## public A records *.sys/*.app/… -> 127.0.0.1 in Cloud DNS (idempotent)
 	@scripts/dns.sh public
+
+dns-public-remove: ## remove the public 127.0.0.1 A records again (only records that point exclusively to 127.0.0.1)
+	@scripts/dns.sh public remove
 
 secrets-set-dns: ## store DNS-01 credentials (GCP service account JSON) in the keychain: FILE=… [DELETE_SOURCE=1]
 	@scripts/secrets.sh set-dns "$(FILE)" $(if $(DELETE_SOURCE),--delete-source)
@@ -109,4 +118,4 @@ test: ## shellcheck + unit tests (bats)
 	@bats tests
 	@scripts/lint-language.sh
 
-.PHONY: hooks secrets-scan lint-language doctor repair certs certs-status certs-autorenew certs-cleanup up down status login bootstrap smoke cf upstream help prereqs prereqs-check configure config-show dns dns-check dns-remove dns-public secrets-set-dns secrets-check kubectl k9s shell kube-env test
+.PHONY: hooks secrets-scan lint-language doctor repair certs certs-status certs-autorenew certs-cleanup up down status login bootstrap smoke cf upstream help prereqs prereqs-check configure config-show dns dns-check dns-remove dns-activate dns-deactivate dns-public dns-public-remove secrets-set-dns secrets-check kubectl k9s shell kube-env test

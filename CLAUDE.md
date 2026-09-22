@@ -455,6 +455,12 @@ UAA redirect URIs for Stratos/the custom UI to `ui.sys.<DOMAIN>`. In self-signed
 
 **Basic principle: nothing depends on the host's IP.** All endpoints run via `127.0.0.1`.
 
+**Resolver follows the stack (no sudo per switch):** `/etc/resolver/<DOMAIN>` stays permanently; only the user-owned dnsmasq
+config switches mode. `make up` → **active** (every name below `DOMAIN` → `127.0.0.1`, works offline); `make down` → **passthrough**
+(forward to the DNS servers of the current network via `/etc/resolv.conf`, so real names resolve normally while the stack is down).
+Stopping the agent instead would break resolution for the domain entirely (macOS does not fall back). Public loopback records from
+`make dns-public` bypass this and keep resolving to `127.0.0.1` — remove them with `make dns-public-remove` when the local resolver is set up.
+
 | Risk on network change | Measure |
 |---|---|
 | `nip.io` or public DNS for `DOMAIN` not reachable (offline, captive portal, airgapped) | dnsmasq locally: `address=/<DOMAIN>/127.0.0.1`, plus `/etc/resolver/<DOMAIN>` (`nameserver 127.0.0.1`) — applies to `127-0-0-1.nip.io` and e.g. `kind.cfapps.cool` (covers `sys.` and `app.`). One-time `sudo`. Optionally additionally public records `*.sys.`/`*.app.<DOMAIN>` → `127.0.0.1` via `make dns-public`. |
