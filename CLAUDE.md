@@ -310,7 +310,7 @@ The web UIs of commercial Cloud Foundry distributions are proprietary. Options:
 | Option | Assessment |
 |---|---|
 | **Stratos 5.5.x** (`cloudfoundry/stratos`, active again since Aug. 2026, Angular 20+, UAA SSO, marketplace, logs, autoscaler UI) | **First choice.** Start as a **native darwin-arm64 binary on the host** (container image is amd64-only) or push as a zip into CF. Register a UAA client, mind self-signed certs. Risk: one main maintainer, V3 migration not fully completed. |
-| **Custom Apps Manager clone** (from the reference implementation: Spring Boot 4 / Kotlin / HTMX, CF API v3, marketplace with parameter forms) | **Alternative with full control** over demo flow and branding. For classic CF: UAA login instead of ServiceAccount token, remove platform-specific parts. |
+| **Custom Apps Manager clone** (from the reference implementation: Spring Boot 4 / Kotlin / HTMX, CF API v3, marketplace with parameter forms) | **Alternative with full control** over demo flow and branding. For classic CF: UAA login instead of a ServiceAccount token, remove platform-specific parts. |
 | Own thin UI | only if neither fits (effort MVP 1–2 weeks, with marketplace/logs another 3–4). |
 
 Decision after a spike: test Stratos against the kind CF (login, apps, marketplace, logs); if there are gaps → port the custom Apps Manager clone.
@@ -353,7 +353,9 @@ Two domain paths (platform and apps subdomain, a common CF layout):
 | `ACME_ENV` | `staging` \| `prod` | test against staging first (rate limits!) |
 | `PUBLIC_DNS_RECORDS` | `true` | additionally create public A records → `127.0.0.1` in Cloud DNS (chapter 9.4) |
 
-**Why a dedicated subdomain (`DOMAIN=kind.cfapps.cool`) instead of the zone apex:** the demo names stay separate from anything else that may live in the zone, the local resolver (`/etc/resolver/<DOMAIN>`) overrides only this subdomain, and it can be varied per Mac/presenter (`DOMAIN=kind-<name>.<zone>`). Anyone with a zone reserved for the demo can set `DOMAIN=DNS_ZONE`.
+**Why a dedicated subdomain (`DOMAIN=kind.cfapps.cool`) instead of the zone apex:** the demo names stay separate from
+anything else that may live in the zone, the local resolver (`/etc/resolver/<DOMAIN>`) overrides only this subdomain, and it can be
+varied per Mac/presenter (`DOMAIN=kind-<name>.<zone>`). Anyone with a zone reserved for the demo can set `DOMAIN=DNS_ZONE`.
 
 ### 9.3 Certificate & naming scheme
 A wildcard covers only **one** label. Hence one certificate with these SANs (layout `split`):

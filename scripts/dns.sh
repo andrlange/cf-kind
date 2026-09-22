@@ -216,9 +216,9 @@ cmd_setup() {
   local mode
   mode="$(dns_mode_of "$DNS_CONF")"
   [[ "$mode" == "absent" || -z "$mode" ]] && mode="passthrough"
+  install_sudoers
   install_agent "$mode"
   install_resolvers
-  install_sudoers
   cmd_check
 }
 
