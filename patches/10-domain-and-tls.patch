@@ -1,0 +1,198 @@
+diff --git a/assets/base-chart/templates/gateway.yaml b/assets/base-chart/templates/gateway.yaml
+index 4e7311f..e3e9ec8 100644
+--- a/assets/base-chart/templates/gateway.yaml
++++ b/assets/base-chart/templates/gateway.yaml
+@@ -235,14 +235,14 @@ spec:
+   - allowedRoutes:
+       namespaces:
+         from: All
+-    hostname: '*.127-0-0-1.nip.io'
++    hostname: '*.{{ .Values.baseDomain }}'
+     name: http
+     port: 80
+     protocol: HTTP
+   - allowedRoutes:
+       namespaces:
+         from: All
+-    hostname: '*.127-0-0-1.nip.io'
++    hostname: '*.{{ .Values.baseDomain }}'
+     name: https
+     port: 443
+     protocol: HTTPS
+@@ -250,7 +250,7 @@ spec:
+       certificateRefs:
+       - group: ""
+         kind: Secret
+-        name: all-in-one-tls
++        name: {{ .Values.gatewayTlsSecret }}
+       mode: Terminate
+   - allowedRoutes:
+       kinds:
+@@ -486,8 +486,8 @@ spec:
+   parentRefs:
+     - name: istio-gateway
+   hostnames:
+-    - blobstore.127-0-0-1.nip.io
+-    - "*.blobstore.127-0-0-1.nip.io"
++    - {{ .Values.blobstoreDomain }}
++    - "*.{{ .Values.blobstoreDomain }}"
+   rules:
+     - backendRefs:
+         - name: minio
+@@ -502,7 +502,7 @@ spec:
+   parentRefs:
+     - name: istio-gateway
+   hostnames:
+-  - "*.127-0-0-1.nip.io"
++  - "*.{{ .Values.baseDomain }}"
+   rules:
+     - backendRefs:
+         - name: gorouter
+@@ -531,7 +531,7 @@ spec:
+       group: ""
+       name: gorouter
+   validation:
+-    hostname: gorouter.127-0-0-1.nip.io
++    hostname: gorouter.{{ .Values.baseDomain }}
+     caCertificateRefs:
+       - kind: ConfigMap
+         group: ""
+diff --git a/assets/base-chart/values.yaml b/assets/base-chart/values.yaml
+index 39c79ab..9479e25 100644
+--- a/assets/base-chart/values.yaml
++++ b/assets/base-chart/values.yaml
+@@ -3,3 +3,6 @@ caKey: ""
+ tlsCert: ""
+ tlsKey: ""
+ cni: ""
++baseDomain: "127-0-0-1.nip.io"
++blobstoreDomain: "blobstore.127-0-0-1.nip.io"
++gatewayTlsSecret: "all-in-one-tls"
+diff --git a/helmfile.yaml.gotmpl b/helmfile.yaml.gotmpl
+index 5757d5c..53b9cb5 100644
+--- a/helmfile.yaml.gotmpl
++++ b/helmfile.yaml.gotmpl
+@@ -72,7 +72,7 @@ releases:
+             kubectl wait --for=condition=Ready nodes --all --timeout=300s
+ 
+             corefile=$(kubectl -n kube-system get configmap coredns -o jsonpath='{.data.Corefile}' | sed '/kubernetes/i \
+-              rewrite name regex (.*)\\.127-0-0-1\\.nip\\.io istio-gateway-istio.{{ .Values.systemNamespace }}.svc.cluster.local answer auto\
++              rewrite name regex (.*)\\.{{ .Values.baseDomain | replace "." "\\\\." }} istio-gateway-istio.{{ .Values.systemNamespace }}.svc.cluster.local answer auto\
+             ')
+             kubectl -n kube-system patch configmap coredns --type=json \
+               -p="$(jq -n --arg cf "$corefile" '[{"op":"replace","path":"/data/Corefile","value":$cf}]')"
+@@ -121,6 +121,9 @@ releases:
+         file: {{ .Values.certsDir }}/all-in-one.key
+     values:
+       - cni: {{ .Values.cni }} 
++      - baseDomain: {{ .Values.baseDomain }}
++        blobstoreDomain: {{ .Values.blobstoreDomain }}
++        gatewayTlsSecret: {{ .Values.gatewayTlsSecret }}
+     hooks:
+       - events: ["presync"]
+         showlogs: true
+@@ -159,7 +162,7 @@ releases:
+     values:
+       - extraEnvVars:
+           - name: MINIO_DOMAIN
+-            value: blobstore.127-0-0-1.nip.io
++            value: {{ .Values.blobstoreDomain }}
+         console:
+           enabled: false
+         resourcesPreset: small
+@@ -234,6 +237,8 @@ releases:
+           enabled: true
+           oauthClientsSecret: {{ .Values.secrets.oauthClientsSecret }}
+           certificateSecret: all-in-one-tls
++      - routingApi:
++          systemDomain: {{ .Values.systemDomain }}
+ 
+   - name: loggregator
+     namespace: {{ .Values.systemNamespace }}
+@@ -254,6 +259,7 @@ releases:
+           certificateSecret: all-in-one-tls
+         trafficcontroller:
+           certificateSecret: all-in-one-tls
++      - systemDomain: {{ .Values.systemDomain }}
+ 
+   - name: log-cache
+     namespace: {{ .Values.systemNamespace }}
+@@ -267,6 +273,8 @@ releases:
+           certificateSecret: all-in-one-tls
+         logCacheBackend:
+           certificateSecret: all-in-one-tls
++      - logCacheBackend:
++          systemDomain: {{ .Values.systemDomain }}
+ 
+   - name: uaa
+     namespace: {{ .Values.systemNamespace }}
+@@ -284,6 +292,7 @@ releases:
+         oauthClientsSecret: {{ .Values.secrets.oauthClientsSecret }}
+         uaaAdminSecret: {{ .Values.secrets.uaaAdminSecret }}
+         certificateSecret: all-in-one-tls
++      - systemDomain: {{ .Values.systemDomain }}
+ 
+   - name: credhub
+     namespace: {{ .Values.systemNamespace }}
+@@ -465,6 +474,13 @@ releases:
+           caCertificateSecret: all-in-one-tls
+           skipSSLVerify: false
+         oauthClientsSecret: {{ .Values.secrets.oauthClientsSecret }}
++      - cloudController:
++          systemDomain: {{ .Values.systemDomain }}
++          appDomains:
++            - {{ .Values.appsDomain }}
++          blobstore:
++            storage_cli:
++              host: http://{{ .Values.blobstoreDomain }}
+ 
+   - name: nfs-volume
+     namespace: {{ .Values.systemNamespace }}
+@@ -509,6 +525,8 @@ releases:
+           certificateSecret: all-in-one-tls
+         boshDns:
+           certificateSecret: all-in-one-tls
++      - policyServer:
++          systemDomain: {{ .Values.systemDomain }}
+ 
+   - name: policy-agent
+     namespace: {{ .Values.systemNamespace }}
+diff --git a/scripts/init.sh b/scripts/init.sh
+index b5cf010..b287ca5 100755
+--- a/scripts/init.sh
++++ b/scripts/init.sh
+@@ -4,7 +4,18 @@ set -euo pipefail
+ 
+ mkdir -p temp/certs
+ 
+-OPENSSL="docker run --rm -v $(pwd)/temp/certs:/certs -v $(pwd)/certs/all-in-one.conf:/all-in-one.conf alpine/openssl"
++# cf-kind-demo (patches/10-domain-and-tls.patch): add the demo domain SANs from CF_CERT_EXTRA_SANS, because gorouter
++# verifies backends against the route host (e.g. api.<system domain>) and they serve this certificate.
++cp certs/all-in-one.conf temp/all-in-one.conf
++san_index=100
++set -f
++for san in ${CF_CERT_EXTRA_SANS:-}; do
++	printf 'DNS.%s = %s\n' "$san_index" "$san" >> temp/all-in-one.conf
++	san_index=$((san_index + 1))
++done
++set +f
++
++OPENSSL="docker run --rm -v $(pwd)/temp/certs:/certs -v $(pwd)/temp/all-in-one.conf:/all-in-one.conf alpine/openssl"
+ SSH_KEYGEN="docker run --rm -v $(pwd)/temp/certs:/certs --entrypoint /usr/bin/ssh-keygen linuxserver/openssh-server"
+ 
+ $OPENSSL genrsa -traditional -out /certs/ca.key 4096
+diff --git a/values.yaml.gotmpl b/values.yaml.gotmpl
+index f65f800..f393464 100644
+--- a/values.yaml.gotmpl
++++ b/values.yaml.gotmpl
+@@ -13,3 +13,10 @@ secrets:
+   uaaAdminSecret: {{ requiredEnv "UAA_ADMIN_SECRET" }}
+   diegoSSHCredentials: {{ requiredEnv "DIEGO_SSH_CREDENTIALS" }}
+   sshProxyKeyFingerprint: {{ requiredEnv "SSH_PROXY_KEY_FINGERPRINT" }}
++
++# cf-kind-demo: Domain & TLS (patches/10-domain-and-tls.patch). Ohne Env-Variablen gilt das Upstream-Schema.
++baseDomain: {{ "CF_BASE_DOMAIN" | env | default "127-0-0-1.nip.io" }}
++systemDomain: {{ "CF_SYSTEM_DOMAIN" | env | default "cf.127-0-0-1.nip.io" }}
++appsDomain: {{ "CF_APPS_DOMAIN" | env | default "apps.127-0-0-1.nip.io" }}
++blobstoreDomain: {{ "CF_BLOBSTORE_DOMAIN" | env | default "blobstore.127-0-0-1.nip.io" }}
++gatewayTlsSecret: {{ "CF_GATEWAY_TLS_SECRET" | env | default "all-in-one-tls" }}

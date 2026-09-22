@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Blocks commits that contain secrets (passwords, keys, certificates, tokens). Enabled via: make hooks
+set -euo pipefail
+if ! command -v gitleaks >/dev/null; then
+  echo "pre-commit: gitleaks missing — refusing to commit unchecked (run: make prereqs)" >&2
+  exit 1
+fi
+gitleaks git --pre-commit --staged --redact --no-banner --exit-code 1 || {
+  echo "pre-commit: possible secret in staged changes — commit blocked. Remove it (never force a real secret in)." >&2
+  exit 1
+}

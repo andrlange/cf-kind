@@ -1,0 +1,20 @@
+# local configuration (defaults live in config.env.example)
+config.env
+config.env.bak
+# upstream checkout and generated files
+upstream/
+temp/
+bin/
+*.tmp
+.DS_Store
+# IDE
+.idea/
+
+# local credentials (never commit)
+.secrets/
+*credentials*.json
+
+# editor swap/backup files
+*.swp
+*.swo
+*~

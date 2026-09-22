@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Scans every commit that is about to be pushed for secrets. Enabled via: make hooks
+set -euo pipefail
+command -v gitleaks >/dev/null || { echo "pre-push: gitleaks missing — refusing to push unchecked (run: make prereqs)" >&2; exit 1; }
+zero=0000000000000000000000000000000000000000
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  [[ "$local_sha" == "$zero" ]] && continue                     # branch deletion
+  if [[ "$remote_sha" == "$zero" ]]; then range="$local_sha"     # new branch: scan all reachable commits
+  else range="$remote_sha..$local_sha"; fi
+  gitleaks git --log-opts="$range" --redact --no-banner --exit-code 1 || {
+    echo "pre-push: possible secret in commits $range — push blocked." >&2
+    exit 1
+  }
+done
