@@ -10,6 +10,10 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/upstream.sh"
 
 PROVIDERS_DIR="${PROVIDERS_DIR:-$CFKD_ROOT/providers}"
 DNS_SCRIPT="${DNS_SCRIPT:-$CFKD_ROOT/scripts/dns.sh}"
+UI_SCRIPT="${UI_SCRIPT:-$CFKD_ROOT/scripts/ui.sh}"
+
+# the web UI follows the stack once it was enabled with 'make ui' (marker removed by 'make ui-stop')
+ui_enabled() { [[ -f "$CFKD_HOME/stratos/enabled" ]]; }
 PROVIDER_FUNCTIONS="provider_preflight provider_ensure provider_delete provider_kube_context provider_health"
 
 load_provider() {
@@ -37,6 +41,8 @@ cmd_up() {
   "$DNS_SCRIPT" activate
   "$CFKD_ROOT/scripts/cf.sh" login
   "$CFKD_ROOT/scripts/cf.sh" bootstrap
+  # CF credentials and tokens change on every rebuild, so an enabled UI is restarted and reconnected
+  if ui_enabled; then "$UI_SCRIPT" up; fi
   log_ok "Cloud Foundry running: $(cf_api_url_for "$SYSTEM_DOMAIN") — next: 'make smoke' or 'make cf ARGS=apps'"
 }
 
@@ -45,6 +51,7 @@ cf_api_url_for() { echo "https://api.$1"; }
 cmd_down() {
   load_config
   load_provider "$K8S_PROVIDER"
+  "$UI_SCRIPT" down
   provider_delete
   # names below DOMAIN resolve normally again (passthrough to the current network's DNS)
   "$DNS_SCRIPT" deactivate

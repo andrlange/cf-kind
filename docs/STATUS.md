@@ -14,7 +14,7 @@ _Last updated: 2026-09-22_
 | [4](#phase-4--network-robustness) | Network robustness | 🟡 in progress |
 | [5](#phase-5--airgap) | Airgap | ⬜ open |
 | [6](#phase-6--service-automation) | Service automation | ⬜ open |
-| [7](#phase-7--developer-experience) | Developer experience | ⬜ open |
+| [7](#phase-7--developer-experience) | Developer experience | 🟡 in progress |
 | [8](#phase-8--arm64-native-buildpack-dependencies) | arm64-native buildpack dependencies | ⬜ open |
 | [9](#phase-9--provider-k3d-optional) | Provider `k3d` (optional) | ⬜ open |
 | [L](#phase-l--language-english) | Language: English | ✅ done |
@@ -112,10 +112,20 @@ Goal: a service marketplace via the Open Service Broker API, served by a thin Go
 Acceptance: create → bind → the app uses `VCAP_SERVICES` → unbind → delete, for all four services.
 
 ## Phase 7 — Developer experience
-**Status:** ⬜ open
+**Status:** 🟡 in progress
 
-Goal: an Apps-Manager-like web UI. The first candidate is Stratos 5.5 (darwin-arm64 binary with a UAA client).
-Also planned are demo apps with service bindings (Spring Boot, a pgvector/RAG demo, Node, Staticfile), `make demo`, and a presenter script.
+Done:
+- **Web UI: Stratos 5.5.3** (`make ui`), an Apps-Manager-like console.
+  - Runs as a native darwin-arm64 binary on the host: pinned version, SHA-256 verified, launchd agent, listens on `127.0.0.1:5443` only.
+  - Served on `https://ui.<system-domain>:5443` with the demo certificate. With Let's Encrypt it is browser-trusted, and Stratos verifies the CF API strictly.
+  - Uses a local admin login whose password is generated per machine (`make ui-password`).
+  - The foundation is registered and connected automatically as `ccadmin`.
+  - Follows the stack: stopped by `make down`, restarted and reconnected by `make up` once enabled.
+
+Open:
+- UI walkthrough: logs, marketplace (after phase 6), scaling, app details.
+- Optional SSO through UAA.
+- Demo apps with service bindings (Spring Boot, a pgvector/RAG demo, Node, Staticfile), `make demo`, and a presenter script.
 
 ## Phase 8 — arm64-native buildpack dependencies
 **Status:** ⬜ open

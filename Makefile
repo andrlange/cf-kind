@@ -59,6 +59,18 @@ down: ## tear everything down (image caches are kept)
 status: ## overview: provider, nodes, pods, CF API
 	@scripts/cluster.sh status
 
+ui: ## web UI (Stratos): install, start and connect to the foundation; then follows make up/down
+	@scripts/ui.sh up
+
+ui-stop: ## stop and disable the web UI
+	@scripts/ui.sh stop
+
+ui-status: ## web UI URL and state
+	@scripts/ui.sh status
+
+ui-password: ## print the local admin password of the web UI
+	@scripts/ui.sh password
+
 doctor: ## health checks: config, resolver, subnet overlap, certificate, cluster, CF API, clock drift
 	@scripts/doctor.sh check
 

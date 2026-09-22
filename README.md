@@ -102,6 +102,10 @@ Run `make` without arguments for the built-in help. The upstream `kind-deploymen
 | | `certs-status` | Show days left, SANs and issuer |
 | | `certs-cleanup` | Remove stale `_acme-challenge` TXT records (e.g. after an aborted run) |
 | | `certs-autorenew` | Install a daily launchd renewal job (`REMOVE=1` removes it) |
+| Web UI | `ui` | Stratos web UI (native arm64 binary, pinned + checksum-verified): start it on `https://ui.<system-domain>:5443`, register and connect the foundation; afterwards it follows `make up`/`make down` |
+| | `ui-stop` | Stop and disable the web UI |
+| | `ui-status` | Show URL and state |
+| | `ui-password` | Print the local admin password (generated per machine, stored only in `~/.config/cf-kind-demo/stratos/`) |
 | Operations | `status` | Overview: provider, nodes, pods, CF API |
 | | `doctor` | Health checks: config, resolver, subnet overlap with the current Wi-Fi, certificate expiry, cluster, CF API, clock drift, global config guard |
 | | `repair` | Re-apply provider state and gateway certificate, then run `doctor` |

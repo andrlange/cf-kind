@@ -303,7 +303,15 @@ The web UIs of commercial Cloud Foundry distributions are proprietary. Options:
 | **Custom Apps Manager clone** (from the reference implementation: Spring Boot 4 / Kotlin / HTMX, CF API v3, marketplace with parameter forms) | **Alternative with full control** over demo flow and branding. For classic CF: UAA login instead of a ServiceAccount token, remove platform-specific parts. |
 | Own thin UI | only if neither fits (effort MVP 1–2 weeks, with marketplace/logs another 3–4). |
 
-Decision after a spike: test Stratos against the kind CF (login, apps, marketplace, logs); if there are gaps → port the custom Apps Manager clone.
+**Decision (spike 2026-09-22): Stratos 5.5.3, integrated as `make ui`.** Findings from the spike:
+- The config is read from `./config.properties` in the working directory, not from `config/` as the release README says.
+- `AUTO_REG_CF_URL` does not register anything outside CF, so `scripts/ui.sh` registers the endpoint via the API.
+- Every mutating API call needs the XSRF token from the login response (`POST /pp/v1/auth/login/uaa`).
+- Endpoints are registered via `POST /api/v1/endpoints` and connected via `POST /api/v1/tokens`.
+- Local admin login (`AUTH_ENDPOINT_TYPE=local`) avoids a dedicated UAA client.
+- The session secret, encryption key and admin password are generated once and kept stable, because the encryption key protects the stored tokens.
+
+The custom Apps Manager clone remains the fallback if Stratos shows gaps in the walkthrough.
 
 ### 8.2 CLI & tooling
 - cf plugins: `log-cache-cli` (`cf tail`), `app-autoscaler-cli-plugin`, `multiapps-cli-plugin` (needs MultiApps Controller) — optional.

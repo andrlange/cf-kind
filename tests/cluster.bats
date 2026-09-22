@@ -23,7 +23,7 @@ setup() {
   [[ "$output" == *"does not implement provider_preflight"* ]] || false
 }
 
-@test "cmd_down switches the local resolver to passthrough" {
+@test "cmd_down stops the UI, deletes the cluster and switches the resolver to passthrough" {
   mkdir -p "$BATS_TEST_TMPDIR/providers"
   cat > "$BATS_TEST_TMPDIR/providers/stub.sh" <<'P'
 provider_preflight() { :; }
@@ -33,9 +33,16 @@ provider_kube_context() { echo stub; }
 provider_health() { :; }
 P
   printf '#!/usr/bin/env bash\necho "dns $*" >> "$CALLS"\n' > "$BATS_TEST_TMPDIR/dns.sh"
-  chmod +x "$BATS_TEST_TMPDIR/dns.sh"
-  export CALLS="$BATS_TEST_TMPDIR/calls" PROVIDERS_DIR="$BATS_TEST_TMPDIR/providers" DNS_SCRIPT="$BATS_TEST_TMPDIR/dns.sh" K8S_PROVIDER=stub
+  printf '#!/usr/bin/env bash\necho "ui $*" >> "$CALLS"\n' > "$BATS_TEST_TMPDIR/ui.sh"
+  chmod +x "$BATS_TEST_TMPDIR/dns.sh" "$BATS_TEST_TMPDIR/ui.sh"
+  export CALLS="$BATS_TEST_TMPDIR/calls" PROVIDERS_DIR="$BATS_TEST_TMPDIR/providers" DNS_SCRIPT="$BATS_TEST_TMPDIR/dns.sh" UI_SCRIPT="$BATS_TEST_TMPDIR/ui.sh" K8S_PROVIDER=stub
   UPSTREAM_DIR="$BATS_TEST_TMPDIR/up" run cmd_down
   [ "$status" -eq 0 ]
-  [ "$(cat "$CALLS" | tr '\n' ' ')" = "delete dns deactivate " ]
+  [ "$(cat "$CALLS" | tr '\n' ' ')" = "ui down delete dns deactivate " ]
+}
+
+@test "ui_enabled follows the marker written by make ui" {
+  ! ui_enabled
+  mkdir -p "$CFKD_HOME/stratos" && touch "$CFKD_HOME/stratos/enabled"
+  ui_enabled
 }
