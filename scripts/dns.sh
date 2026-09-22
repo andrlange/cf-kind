@@ -18,6 +18,37 @@ DNS_LABEL="io.cf-kind-demo.dnsmasq"
 RESOLVER_MARKER="# managed by cf-kind-demo"
 RESOLVER_DIR="${RESOLVER_DIR:-/etc/resolver}"
 LAUNCH_AGENT="$HOME/Library/LaunchAgents/$DNS_LABEL.plist"
+SUDOERS_FILE="/etc/sudoers.d/cf-kind-demo"
+
+# Narrow sudoers rule: macOS caches negative answers (NXDOMAIN) from passthrough mode for minutes; flushing the cache on
+# every mode switch needs root. Only these two exact commands are allowed without a password.
+render_sudoers() {
+  printf '%s\n' "$RESOLVER_MARKER — lets 'make up/down' flush the macOS DNS cache without a password" \
+    "$1 ALL=(root) NOPASSWD: /usr/bin/dscacheutil -flushcache, /usr/bin/killall -HUP mDNSResponder"
+}
+
+# flush_dns_cache — best effort; works without a prompt once the sudoers rule is installed
+flush_dns_cache() {
+  if sudo -n /usr/bin/dscacheutil -flushcache 2>/dev/null && sudo -n /usr/bin/killall -HUP mDNSResponder 2>/dev/null; then
+    return 0
+  fi
+  log_warn "could not flush the macOS DNS cache — names may take up to 5 minutes to switch" "run once: make dns (installs a narrow sudoers rule)"
+}
+
+install_sudoers() {
+  local tmp
+  tmp="$(mktemp)"
+  render_sudoers "$(id -un)" > "$tmp"
+  /usr/sbin/visudo -cf "$tmp" >/dev/null || { rm -f "$tmp"; die "generated sudoers rule is invalid"; }
+  if sudo test -f "$SUDOERS_FILE" && sudo cmp -s "$tmp" "$SUDOERS_FILE"; then
+    log_ok "sudoers rule for DNS cache flushing is current ($SUDOERS_FILE)"
+  else
+    log_info "installing $SUDOERS_FILE: allows only 'dscacheutil -flushcache' and 'killall -HUP mDNSResponder' without a password"
+    sudo install -m 0440 -o root -g wheel "$tmp" "$SUDOERS_FILE"
+    log_ok "sudoers rule installed"
+  fi
+  rm -f "$tmp"
+}
 
 # render_dnsmasq_conf active|passthrough DOMAIN…
 #   active:      every name below DOMAIN -> 127.0.0.1, no upstream (works offline)
@@ -115,7 +146,7 @@ install_agent() {
   render_launchd_plist "$bin" "$DNS_CONF" > "$LAUNCH_AGENT"
   launchctl bootout "gui/$(id -u)/$DNS_LABEL" >/dev/null 2>&1 || true
   launchctl bootstrap "gui/$(id -u)" "$LAUNCH_AGENT"
-  sudo -n dscacheutil -flushcache 2>/dev/null || true
+  flush_dns_cache
   log_ok "dnsmasq agent running ($DNS_LABEL, 127.0.0.1:$DNS_PORT, mode $mode) for: $RESOLVER_DOMAINS"
 }
 
@@ -187,6 +218,7 @@ cmd_setup() {
   [[ "$mode" == "absent" || -z "$mode" ]] && mode="passthrough"
   install_agent "$mode"
   install_resolvers
+  install_sudoers
   cmd_check
 }
 
@@ -203,6 +235,7 @@ cmd_remove() {
     sudo rm -f $own
     sudo dscacheutil -flushcache
   fi
+  if sudo test -f "$SUDOERS_FILE"; then sudo rm -f "$SUDOERS_FILE" && log_ok "sudoers rule removed"; fi
   log_ok "local resolver removed"
 }
 

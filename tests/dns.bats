@@ -115,3 +115,12 @@ setup() {
   ! only_loopback "127.0.0.1;203.0.113.7"
   ! only_loopback ""
 }
+
+@test "render_sudoers allows exactly the two DNS cache flush commands without a password" {
+  run render_sudoers alice
+  [ "${lines[0]}" = "# managed by cf-kind-demo — lets 'make up/down' flush the macOS DNS cache without a password" ]
+  [ "${lines[1]}" = "alice ALL=(root) NOPASSWD: /usr/bin/dscacheutil -flushcache, /usr/bin/killall -HUP mDNSResponder" ]
+  [ "${#lines[@]}" -eq 2 ]
+  printf '%s\n' "$output" > "$BATS_TEST_TMPDIR/sudoers"
+  /usr/sbin/visudo -cf "$BATS_TEST_TMPDIR/sudoers" >/dev/null
+}

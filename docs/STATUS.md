@@ -85,7 +85,7 @@ Done:
 - The resolver follows the stack. `make up` switches it to **active** (demo names → `127.0.0.1`, works offline). `make down` switches it to **passthrough** (names resolve through the current network's DNS). No sudo is needed for either switch.
 
 Open:
-- **Negative DNS caching in macOS:** after `make down` → `make up`, the names can be unreachable for up to 5 minutes. A fix is being decided (a narrowly scoped sudoers rule to flush the cache, or a wait-and-hint approach).
+- **Negative DNS caching in macOS:** fixed in code. `make dns` installs a narrowly scoped sudoers rule, `/etc/sudoers.d/cf-kind-demo`, that allows only `dscacheutil -flushcache` and `killall -HUP mDNSResponder` without a password. Every resolver switch flushes the cache. Still open: verifying the rule on a real machine.
 - **Acceptance tests** (Wi-Fi change, offline, Docker Desktop restart, Mac sleep), to be documented in `docs/testplan.md`.
 - **Static node IPs** for multi-node kind clusters across Docker restarts.
 
