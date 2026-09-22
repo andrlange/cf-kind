@@ -3,6 +3,10 @@
 Cloud Foundry as a demo environment on Apple Silicon Macs, set up and torn down in minutes. Based on
 [`cloudfoundry/kind-deployment`](https://github.com/cloudfoundry/kind-deployment).
 
+<p align="center">
+  <img src="./docs/assets/cf-kind.svg" alt="cf-kind teaser banner" width="100%" />
+</p>
+
 Goals:
 - **Easy to handle**: one command to set up, one to tear down.
 - **Stable across network changes**: all endpoints run via `127.0.0.1`, local DNS resolver, offline too.

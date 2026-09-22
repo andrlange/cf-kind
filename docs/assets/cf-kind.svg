@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d1117" />
+      <stop offset="50%" stop-color="#161b22" />
+      <stop offset="100%" stop-color="#0a0d12" />
+    </linearGradient>
+    <linearGradient id="cfBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#005A9C" />
+      <stop offset="100%" stop-color="#00A3E0" />
+    </linearGradient>
+    <linearGradient id="k8sBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#326ce5" />
+      <stop offset="100%" stop-color="#7aa2f7" />
+    </linearGradient>
+    <linearGradient id="accentGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00A3E0" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#326ce5" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#2ac3de" stop-opacity="0.4" />
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#30363d" stroke-width="0.75" stroke-opacity="0.4"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="320" rx="16" fill="url(#bgGrad)" />
+  <rect width="1200" height="320" rx="16" fill="url(#grid)" />
+  <rect x="0" y="316" width="1200" height="4" fill="url(#accentGlow)" />
+
+  <!-- Left: Stylized Architecture Icon (Kind Node hosting Cloud Foundry abstraction) -->
+  <g transform="translate(100, 60)">
+    <!-- Outer Node (kind / Docker container) -->
+    <rect x="0" y="10" width="180" height="180" rx="20" fill="#21262d" stroke="#30363d" stroke-width="2.5" />
+    <text x="20" y="40" fill="#8b949e" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial" font-size="12" font-weight="600" letter-spacing="1.5">KIND NODE (DOCKER)</text>
+    
+    <!-- Inner K8s / Pod Container Layer -->
+    <rect x="20" y="60" width="140" height="110" rx="12" fill="#161b22" stroke="url(#k8sBlue)" stroke-width="1.8" />
+    
+    <!-- Cloud Foundry App / PaaS symbol inside -->
+    <path d="M55,120 Q55,100 75,100 Q80,85 100,85 Q120,85 125,100 Q145,100 145,120 Q145,135 125,135 L65,135 Q55,135 55,120 Z" fill="url(#cfBlue)" opacity="0.9" />
+    <circle cx="95" cy="115" r="4" fill="#ffffff" />
+    
+    <!-- Connection Dots -->
+    <circle cx="210" cy="100" r="3" fill="#326ce5" />
+    <circle cx="225" cy="100" r="4" fill="#00A3E0" />
+    <circle cx="240" cy="100" r="3" fill="#7aa2f7" />
+  </g>
+
+  <!-- Right: Typography & Project Identity -->
+  <g transform="translate(380, 105)">
+    <!-- Tagline Badge -->
+    <rect x="0" y="0" width="210" height="26" rx="13" fill="#21262d" stroke="#388bfd" stroke-width="1" />
+    <text x="14" y="17" fill="#58a6ff" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial" font-size="12" font-weight="600" letter-spacing="1">LOCAL CLOUD PLATFORM</text>
+
+    <!-- Main Title -->
+    <text x="0" y="75" fill="#f0f6fc" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial" font-size="52" font-weight="800" letter-spacing="-1">
+      cf<tspan fill="#58a6ff">-</tspan>kind
+    </text>
+
+    <!-- Description -->
+    <text x="0" y="115" fill="#8b949e" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial" font-size="19" font-weight="400">
+      Running Cloud Foundry workloads seamlessly on local Kubernetes in Docker.
+    </text>
+
+    <!-- Tech Badges -->
+    <g transform="translate(0, 135)">
+      <!-- Cloud Foundry -->
+      <rect x="0" y="0" width="125" height="26" rx="6" fill="#1f242c" stroke="#30363d" stroke-width="1"/>
+      <text x="12" y="17" fill="#c9d1d9" font-family="sans-serif" font-size="12" font-weight="500">Cloud Foundry</text>
+
+      <!-- Kubernetes (kind) -->
+      <rect x="135" y="0" width="115" height="26" rx="6" fill="#1f242c" stroke="#30363d" stroke-width="1"/>
+      <text x="147" y="17" fill="#c9d1d9" font-family="sans-serif" font-size="12" font-weight="500">KinD Cluster</text>
+
+      <!-- Dev Experience -->
+      <rect x="260" y="0" width="145" height="26" rx="6" fill="#1f242c" stroke="#30363d" stroke-width="1"/>
+      <text x="272" y="17" fill="#c9d1d9" font-family="sans-serif" font-size="12" font-weight="500">Local Development</text>
+    </g>
+  </g>
+</svg>
