@@ -16,19 +16,11 @@ Architecture, scope and decisions are in [`CLAUDE.md`](CLAUDE.md), the phases in
 
 ## Status
 
-| Phase | Content | Status |
+See **[docs/STATUS.md](docs/STATUS.md)** for the current state of every phase: what is done, what is open, and the acceptance criteria.
+
+| Done | In progress | Open |
 |---|---|---|
-| 0 | Prerequisites: tools, configuration (domain/TLS), local DNS, DNS credentials | **done** |
-| 1 | Upstream + provider `kind` (reference) | **done** — `make up`, `make smoke` green |
-| 2 | Provider `docker-desktop` | planned |
-| 3 | Domain & TLS (Let's Encrypt, renewal) | **done** — `https://api.sys.kind.cfapps.cool` with a Let's Encrypt wildcard, strict TLS verification green |
-| 4 | Network robustness (`doctor`/`repair`) | **in progress** — `make doctor` green; acceptance tests (Wi-Fi change, offline, Docker restart, sleep) open |
-| 5 | Airgap (Artifact Keeper) | planned |
-| 6 | Service automation (OSB broker + operators) | planned |
-| 7 | Developer experience (UI, demo apps) | planned |
-| 8 | arm64-native buildpack dependencies | planned |
-| 9 | Provider `k3d` (optional) | planned |
-| L | Language: English | **done** — `make lint-language` part of `make test` |
+| 0 Prerequisites · 1 Upstream + `kind` · 3 Domain & TLS · L English | 4 Network robustness | 2 `docker-desktop` · 5 Airgap · 6 Services · 7 Developer experience · 8 arm64 buildpacks · 9 `k3d` |
 
 ## Prerequisites
 
